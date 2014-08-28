@@ -1,0 +1,198 @@
+<script language='javascript'>
+
+
+var timer = 0;
+
+function updateTable( data )
+{
+	//alert("Updating Table");
+	if(data.indexOf("*eol*") < 0 ) {
+		return;
+	}
+
+	var lines = data.split( "*eol*" );
+
+	for( var i = 0; i < lines.length; i++ )
+	{
+		if(lines[i].indexOf("*sp*") < 0 ) 
+		{
+			continue;
+		}
+
+		var item = lines[i].split( "*sp*" );
+
+		if (rowExists(item[0]))
+		{
+			continue;
+		}
+		else
+		{
+			addRow( item[0], item[1], item[2], item[3], item[4], item[5] );
+		}
+	}
+
+	$( ".row" ).each(function( index )
+	{
+		var rowID = $(this).attr( "id" );
+
+		var that = this;
+		var found = false;
+
+		for( var i = 0; i < lines.length; i++ )
+		{
+			var ticketid = lines[i].split( "*sp*" )[0];
+			var status = lines[i].split( "*sp*" )[3];
+			
+			if(ticketid == rowID)
+			{
+				found = true;
+				updateRow( status , that );
+				break;
+			}
+		}
+
+		if (found != true)
+		{
+			removeRow(rowID);
+		}
+
+	});
+}
+
+function refresh()
+{
+	updateBar();
+
+	if (timer == {refreshTime})
+	{
+		$.ajax(
+		{
+			type: "GET",
+			url: "ticker.php?ajax=true",
+			dataType: "html"
+		}).success(function( data )
+		{ 
+			updateTable( data );
+			timer = 0;
+			updateBar(); 
+		});
+	}
+	
+	timer++;
+}
+
+
+function updateBar() 
+{
+	var percent = ( timer / {refreshTime} ) * 100;
+
+	percent += "%";
+	$( ".ui-progressbar-value" ).animate({'width': percent}, 999, "linear" );
+}
+	
+
+
+function rowExists( id )
+{
+	if ( $( '#' + id ).length > 0)
+	{
+   		return 1;
+	}
+	return 0;
+}
+
+function updateRow( status , that )
+{
+	if ( status == "In Progress") 
+	{
+		$(that).attr( "class", "row inProgress" );
+		$('.status span', that).text('In Progress');
+	}
+	else if ( status == "Open" ) 
+	{
+		$(that).attr( "class", "row open" );
+		$('.status span', that).text('Open');
+	}
+}
+
+function removeRow( id )
+{
+	$("#"+id).animate({ opacity: 0 },600).slideUp(600, function()
+	{
+		$( "#" + id ).remove();
+	});
+}
+
+function addRow( id , type, user, status, subject, creation )
+{
+	if(status == "Open")
+	{
+		var divclass = "open";
+	}
+	else if (status == "In Progress") 
+	{
+		var divclass = "inProgress";
+	}
+
+	var row = "<div class='row " + divclass + "' id='" + id + "' style='display:none'>";
+	row += "<div class='surface'>";
+	row += "<div class=\"idsector\">"
+	row += "<span>ID: " + id + "<br></span>";
+	row += "</div>"
+	row += "<div class=\"mainsector\">"
+	row += "<!--<span>Type: " + type + "<br></span>-->";
+	row += "<span>User: " + user + "<br></span>";
+	row += "<span>Status: " + status + "<br></span>";
+	row += "<span>Subject: " + subject + "<br></span>";
+	row += "</div>"
+	row += "</div>";
+	row += "<br>";
+	row += "</div>";
+
+	var rowInserted = false;
+	$(".row").each(function( index )
+	{		
+		var divID = $(this).attr("id");
+
+		if(divID > id)
+		{
+			$( this ).before( row );
+			rowInserted = true;
+			return;
+		}
+	});
+
+	if(!rowInserted)
+	{
+		$(".container").append(row);
+	}	
+
+	$("#"+id).css('opacity', 0).slideDown(1200).animate({ opacity: 1 },{ queue: false, duration: 4000 });
+
+	$(".idsector > span").fitText(0.5);
+	$(".mainsector > span").fitText(1.8);
+}
+
+function autoScroll()
+{
+	var scrollBottom = $(window).scrollTop() + $(window).height();
+
+	$('html, body').animate({scrollTop: scrollBottom}, 12000, function()
+	{
+		window.scrollTo(0,0);
+	});	
+}
+
+$( document ).ready( function()
+{
+	setInterval( function() { refresh() } , 1000 );
+	$(".idsector > span").fitText(0.5);
+	$(".mainsector > span").fitText(1.8);
+	//setInterval( function() { autoScroll() } , 13000 );
+	
+});
+
+</script>
+
+</body>
+</html>

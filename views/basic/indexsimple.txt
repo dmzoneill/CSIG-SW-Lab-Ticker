@@ -1,0 +1,1 @@
+#ticketentry#[ticketid]*sp*[type]*sp*[user]*sp*[status]*sp*[subject]*sp*[creation]*sp*[dept]*eol*#/ticketentry#

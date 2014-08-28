@@ -1,0 +1,269 @@
+var timer = 0;
+var rowtext = "";
+
+function updateTable( data )
+{
+	//alert("Updating Table");
+	if(data.indexOf("*eol*") < 0 ) {
+		return;
+	}
+
+	var lines = data.split( "*eol*" );
+
+	for( var i = 0; i < lines.length; i++ )
+	{
+		if(lines[i].indexOf("*sp*") < 0 ) 
+		{
+			continue;
+		}
+
+		var datafields = lines[i].split( "*sp*" );
+
+		id = datafields[0];
+		type = datafields[1];
+		user = datafields[2];
+		status = datafields[3];
+		subject = datafields[4];
+		creation_time = datafields[5];
+		dept = datafields[6];
+
+		if (rowExists(id))
+		{
+			continue;
+		}
+		else
+		{
+			addRow( id, type, user, status, subject, creation_time, dept );
+		}
+	}
+
+	$( ".row" ).each(function( index )
+	{
+		var rowID = $(this).attr( "id" );
+
+		var that = this;
+		var found = false;
+
+		for( var i = 0; i < lines.length; i++ )
+		{
+			var ticketid = lines[i].split( "*sp*" )[0];
+			var status = lines[i].split( "*sp*" )[3];
+			
+			if(ticketid == rowID)
+			{
+				found = true;
+				updateRow( status , that, rowID );
+				break;
+			}
+		}
+
+		if (found != true)
+		{
+			removeRow(rowID);
+		}
+
+	});
+}
+
+function refresh()
+{
+	updateBar();
+
+	if (timer == {refreshTime})
+	{
+		$.ajax(
+		{
+			type: "GET",
+			url: "ticker.php?ajax=true",
+			dataType: "html"
+		}).success(function( data )
+		{ 
+			updateTable( data );
+			timer = 0;
+			updateBar(); 
+		});
+	}
+	
+	timer++;
+}
+
+
+function updateBar() 
+{
+	var percent = ( timer / {refreshTime} ) * 100;
+
+	percent += "%";
+	$( ".ui-progressbar-value" ).animate({'width': percent}, 999, "linear" );
+}
+
+function rowExists( id )
+{
+	if ( $( '#' + id ).length > 0)
+	{
+   		return 1;
+	}
+	return 0;
+}
+
+function updateRow( status , that , rowID )
+{
+	if( status != $('.status span', that).text() )
+	{
+
+		var rowDiv = $("#" + rowID);
+		rowDiv.slideUp(600, function()
+		{
+			if ( status == "In Progress") 
+			{
+				$(that).attr( "class", "row inProgress" );
+				$('.status span', that).text('In Progress');
+			}
+			else if ( status == "Open" ) 
+			{
+				$(that).attr( "class", "row open" );
+				$('.status span', that).text('Open');
+			}
+			else if ( status == "Closed" ) 
+			{
+				$(that).attr( "class", "row closed" );
+				$('.status span', that).text('Closed');
+			}
+			else if ( status == "On Hold" ) 
+			{
+				$(that).attr( "class", "row onHold" );
+				$('.status span', that).text('On Hold');
+			}
+
+
+		
+			var rowInserted = false;
+
+			$(".row").each(function( index )
+			{		
+				var divID = $(this).attr("id");
+
+				var divStatus = $('.status span', this).text();
+
+				if( status ==  divStatus )
+				{
+					if(divID > rowID)
+					{
+						$( this ).before( rowDiv );
+						rowInserted = true;
+						return false;
+					}
+				}
+				else if (status == "In Progress" && divStatus == "Open") 
+				{
+					$( this ).before( rowDiv );
+					rowInserted = true;
+					return false;
+				};	
+			});
+
+			if(!rowInserted)
+			{
+				$(".container").append(rowDiv);
+			}
+		});
+
+		rowDiv.css('opacity', 0).slideDown(1200).animate({ opacity: 1 },{ queue: false, duration: 4000 });
+	}
+}
+
+function removeRow( id , datafields )
+{
+	$("#"+id).animate({ opacity: 0 },600).slideUp(600, function()
+	{
+		$( "#" + id ).remove();
+	});
+}
+
+function addRow( id , type, user, status, subject, creation, dept )
+{
+	if(status == "Open")
+	{
+		var divclass = "open";
+	}
+	else if (status == "In Progress") 
+	{
+		var divclass = "inProgress";
+	}
+	else if (status == "On Hold") 
+	{
+		var divclass = "onHold";
+	}
+	else if (status == "Closed") 
+	{
+		var divclass = "closed";
+	}
+
+	var row="<div class='row " + divclass + "' id='" + id + "'> 						\
+				<div class='surface'> 													\
+					<div class=\"id\"> 													\
+						<span>" + id + "<br></span> 									\
+						<!-- <span>Time: " + creation + "<br></span> -->				\
+						<!--<span>Department: " + dept + "<br></span>-->				\
+						<!--<span>Type: " + type + "<br></span>-->						\
+					</div> 																\
+					<div class=\"owner\"> 												\
+						<span>" + user + "<br></span> 									\
+					</div> 																\
+					<div class=\"subject\"> 											\
+						<span>" + subject + "<br></span> 								\
+					</div> 																\
+					<div class=\"status\">												\
+						<span>" + status + "<br></span> 								\
+					</div> 																\
+				</div> 																	\
+			</div>";
+
+	var rowInserted = false;
+	$(".row").each(function( index )
+	{		
+		var divID = $(this).attr("id");
+
+		var divStatus = $('.status span', this).text();
+
+		if( status ==  divStatus )
+		{
+			if(divID > id)
+			{
+				$( this ).before( row );
+				rowInserted = true;
+				return;
+			}
+		}
+		else if (status == "In Progress" && divStatus == "Open") 
+		{
+			$( this ).before( row );
+			rowInserted = true;
+			return;
+		};	
+	});
+
+	if(!rowInserted)
+	{
+		$(".container").append(row);
+	}	
+
+	$("#"+id).css('opacity', 0).slideDown(1200).animate({ opacity: 1 },{ queue: false, duration: 4000 });
+
+}
+
+function autoScroll()
+{
+	var scrollBottom = $(document).height();
+
+	$('html, body').animate({scrollTop: scrollBottom+"px"}, 20000, "linear", function()
+	{
+		$('html, body').animate({scrollTop: 0}, 3000, autoScroll());	
+	});	
+}
+
+$( window ).load( function()
+{
+	setInterval( function() { refresh() } , 1000 );
+	//autoScroll();
+	
+});

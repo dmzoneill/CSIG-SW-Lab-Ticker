@@ -1,0 +1,36 @@
+@font-face 
+{
+	font-family: IntelClear;
+	src: url(IntelClear/IntelClear_Regular.ttf);
+}
+
+@font-face 
+{
+	font-family: IntelClearItalic;
+	src: url(IntelClear/IntelClear_Italic.ttf);
+}
+
+@font-face 
+{
+	font-family: IntelClearBold;
+	src: url(IntelClear/IntelClear_Bold.ttf);
+}
+
+@font-face 
+{
+	font-family: IntelClearBoldItalic;
+	src: url(IntelClear/IntelClear_BoldItalic.ttf);
+}
+
+@font-face 
+{
+	font-family: IntelClearLight;
+	src: url(IntelClear/IntelClear_Light.ttf);
+}
+
+@font-face 
+{
+	font-family: IntelClearLightItalic;
+	src: url(IntelClear/IntelClear_LightItalic.ttf);
+}
+

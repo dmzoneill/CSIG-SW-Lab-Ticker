@@ -1,0 +1,130 @@
+<html>
+<head>
+	<script src="js/jquery.min.js"></script>
+	<script src="js/FitText/jquery.fittext.js"></script>
+
+	<title>{title}</title>
+	<style>
+		@import url("//code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css");
+
+		body
+		{
+			margin: 0;
+			color: #FFFFFF;
+		}
+
+		#wrapper
+		{
+			margin: 8px;
+			padding-top: 18px;
+		}
+
+		.container 
+		{
+		    height: 100%;
+		    width:100%;
+		    /*background-color: yellow;*/
+		    position: relative;
+		    display: table;
+		    
+		}
+
+		.surface
+		{
+			-webkit-border-radius: 20px;
+			-moz-border-radius: 20px;
+			//border-radius: 30px;
+			border-radius: 5px 40px 5px;
+			
+			background-color:#0F63AC;
+			margin: auto;
+			margin-bottom: 1%;
+			padding: 15px;
+			
+			border-width: 3px;
+			border-style: solid;
+			border-color: #000000;
+
+			box-shadow: 7px 7px 12px 0px #4A4A4A;
+			
+			width: 45%;
+			height: 90%;
+
+			overflow: hidden;
+		}
+
+		span
+		{
+			display: block;
+			//text-align: center;
+		}
+
+		.row
+		{
+			//display: table-row;
+		}
+
+		.ui-widget-header
+		{
+			background: #128dbe;
+		}
+
+		#progresswrapper
+		{
+			padding: 8px;
+	
+			height: 8px;
+			width: 100%;
+			position: fixed;
+			top: 0px;
+			z-index: 10;
+
+			border-bottom: 1px solid #555555;
+			background-color: #F4F4F5;
+		}
+
+		#progressbar
+		{
+			height: 95%;
+			width: 99%;
+		}
+
+		.inProgress .surface 
+		{
+			background-color:#8AC05C;
+		}
+
+		.idsector
+		{
+			float:left;
+			width: 35%;
+			height: inherit;
+
+			border-right-width: 3px;
+			border-right-color: #FFFFFF;
+		}
+
+		.idsector > span
+		{
+			margin: auto;
+		}
+
+		.mainsector
+		{
+			float: right;
+			width: 65%;	
+		}
+	</style>
+
+	
+</head>
+<body>
+
+<div id="progresswrapper">
+	<div id="progressbar" class="ui-progressbar ui-widget ui-widget-content ui-corner-all" role="progressbar" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0">
+		<div class="ui-progressbar-value ui-widget-header ui-corner-left" style="width: 0%;"></div>
+	</div>
+</div>
+
+<div id="wrapper">
+<br>

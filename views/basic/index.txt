@@ -1,0 +1,39 @@
+@header@
+<div class="container">
+
+	<div id="tableheader">
+		<table id="header">
+			<tbody>
+		  		<tr>
+					<td class="id">Ticket ID</td>
+					<td class="owner">Owner</td>
+					<td class="subject">Subject</td>
+					<td class="status">Status</td>
+				</tr>
+			</tbody>
+		</table>  
+	</div>
+
+	#ticketentry#
+	<div class="row [class]" id='[ticketid]'>
+		<div class="surface">
+			<div class="id">
+				<span>[ticketid]<br></span>
+				<!--<span>Time: [creation]<br></span>-->
+				<!--<span>Department: [dept]<br></span>-->
+				<!--<span>Type: [type]<br></span>-->
+			</div>
+			<div class="owner">
+				<span>[user]<br></span>
+			</div>
+			<div class="subject">
+				<span>[subject]<br></span>
+			</div>
+			<div class="status">
+				<span>[status]<br></span>
+			</div>
+		</div>
+	</div>
+	#/ticketentry#
+</div>
+@footer@

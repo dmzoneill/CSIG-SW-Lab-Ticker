@@ -1,0 +1,19 @@
+@header@
+<div class="container">
+	#ticketentry#
+	<div class="row [class]" id='[ticketid]'>
+		<div class="surface">
+			<div class="idsector">
+				<span>ID: [ticketid]<br></span>
+			</div>
+			<div class="mainsector">
+				<!--<span>[type]<br></span>-->
+				<span>[user]<br></span>
+				<span>[status]<br></span>
+				<span>[subject]<br></span>
+			</div>
+		</div>
+	</div>
+	#/ticketentry#
+</div>
+@footer@
