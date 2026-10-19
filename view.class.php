@@ -9,19 +9,24 @@ function configValue(string $name): mixed
 
 class View
 {
-    /** @var string */
-    private $page = "";
-    /** @var int */
-    private $rec_include = 0; // 2 levels of recursion
-    /** @var int */
-    private $rec_replace = 0; // 2 levels of recursion
+    private string $page = "";
+    private int $rec_include = 0; // 2 levels of recursion
+    private int $rec_replace = 0; // 2 levels of recursion
 
     public function __construct(string $template = "index")
     {
-        if (file_exists(configValue('__VIEW') . "/" . $template . ".txt")) {
-            $this->page = join("", file(configValue('__VIEW') . "/" . $template . ".txt"));
-            $this->applyIncludes();
+        $templatePath = (string) configValue('__VIEW') . "/" . $template . ".txt";
+        if (!file_exists($templatePath)) {
+            return;
         }
+
+        $lines = file($templatePath);
+        if ($lines === false) {
+            return;
+        }
+
+        $this->page = join("", $lines);
+        $this->applyIncludes();
     }
 
     /**
@@ -37,18 +42,14 @@ class View
                     $this->process($tags);
                     return;
                 } else {
-                    $this->page = preg_replace("/{" . $tag . "}/", $data, $this->page);
+                    $this->replaceInPage("/{" . $tag . "}/", is_scalar($data) ? (string) $data : "");
                 }
             }
         }
 
-        if (preg_match_all("/\\{[a-zA-Z0-9_\\.]+\\}/", $this->page, $matches) > 0) {
-            if ($this->rec_replace < 2) {
-                $this->rec_replace++;
-                $this->process($tags);
-            } else {
-                 preg_replace("/\\{[a-zA-Z0-9_\\.]+\\}/", "", $this->page); // cannot find (so replace with nothing)
-            }
+        if (preg_match_all("/\\{[a-zA-Z0-9_\\.]+\\}/", $this->page, $matches) > 0 && $this->rec_replace < 2) {
+            $this->rec_replace++;
+            $this->process($tags);
         }
     }
 
@@ -62,8 +63,9 @@ class View
         $num = preg_match($pattern, $this->page, $matches);
         if ($num > 0) {
             $replacement = call_user_func_array(array( $class , $callback ), array( $matches[1] ));
-
-            $this->page = preg_replace($pattern, $replacement, $this->page);
+            if (is_scalar($replacement) || $replacement === null) {
+                $this->replaceInPage($pattern, (string) $replacement);
+            }
         }
     }
 
@@ -89,13 +91,24 @@ class View
 
     private function loadFile(string $file): string
     {
-        ob_start();
         $includePath = $this->resolveInclude($file);
-        /** @psalm-suppress UnresolvableInclude */
-        include $includePath;
-        $buffer = ob_get_contents();
-        ob_end_clean();
+        $buffer = file_get_contents($includePath);
+        if (!is_string($buffer)) {
+            return "";
+        }
+
         return $buffer;
+    }
+
+    /**
+     * @param non-empty-string $pattern
+     */
+    private function replaceInPage(string $pattern, string $replacement): void
+    {
+        $updated = preg_replace($pattern, $replacement, $this->page);
+        if (is_string($updated)) {
+            $this->page = $updated;
+        }
     }
 
     private function applyIncludes(): void
@@ -106,7 +119,7 @@ class View
             for ($i = 0; $i < count($match); $i++) {
                 $include_name = substr($match[$i], 1, strlen($match[$i]) - 2);
                 $data = $this->loadFile($include_name . ".txt");
-                $this->page = preg_replace("/@" . $include_name . "@/", $data, $this->page);
+                $this->replaceInPage("/@" . $include_name . "@/", $data);
             }
         }
 

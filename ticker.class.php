@@ -57,9 +57,6 @@ class Ticker
      */
     private static function sortBy($a, $b): int
     {
-        $a_status = $a->getStatus()->getTitle();
-        $b_status = $b->getStatus()->getTitle();
-
         $one = null;
         $two = null;
 
@@ -88,10 +85,21 @@ class Ticker
         $departments = kyDepartment::getAll();
 
         foreach ($this->getDeptExclusions() as $value) {
-            $departments = $departments->filterByTitle($value);
+            $departments = $this->filterResultSet($departments, "filterByTitle", $value);
         }
 
         return $departments;
+    }
+
+    /**
+     * Kayako result sets expose filterBy* through __call. Call that method
+     * directly so the return type stays a result set.
+     *
+     * @param mixed $argument
+     */
+    private function filterResultSet(\kyResultSet $set, string $method, $argument): \kyResultSet
+    {
+        return $set->__call($method, array($argument));
     }
 
     /**
@@ -102,15 +110,14 @@ class Ticker
      */
     private function appendMatchingTickets(array &$tickets, $departments, $status, $type): void
     {
-        $statusList = kyTicketStatus::getAll();
-        /** @var \kyResultSet $filteredStatus */
-        $filteredStatus = $statusList->{'filterByTitle'}($status);
-        $typeList = kyTicketType::getAll();
-        /** @var \kyResultSet $filteredType */
-        $filteredType = $typeList->{'filterByTitle'}($type);
+        $filteredStatus = $this->filterResultSet(kyTicketStatus::getAll(), "filterByTitle", $status);
+        $filteredType = $this->filterResultSet(kyTicketType::getAll(), "filterByTitle", $type);
         $ticketsearch = kyTicket::getAll($departments, $filteredStatus);
-        /** @var \kyResultSet $ticketsearch */
-        $ticketsearch = $ticketsearch->{'filterByTypeId'}($filteredType->first()->getId());
+        $ticketsearch = $this->filterResultSet(
+            $ticketsearch,
+            "filterByTypeId",
+            $filteredType->first()->getId()
+        );
 
         if (count($ticketsearch->getRawArray()) > 0) {
             $ticketsfound = $ticketsearch->getRawArray();
@@ -175,22 +182,38 @@ class Ticker
                     $class = "onHold";
                 }
 
-                $item = preg_replace("/\\[class\\]/s", $class, $item);
-                $item = preg_replace("/\\[ticketid\\]/s", $kyTicket->getId(), $item);
-                $item = preg_replace("/\\[user\\]/s", $kyTicket->getFullName(), $item);
-                $item = preg_replace("/\\[subject\\]/s", $subject, $item);
-                $item = preg_replace("/\\[status\\]/s", $status, $item);
+                $item = $this->replaceToken($item, "/\\[class\\]/s", $class);
+                $item = $this->replaceToken($item, "/\\[ticketid\\]/s", $kyTicket->getId());
+                $item = $this->replaceToken($item, "/\\[user\\]/s", $kyTicket->getFullName());
+                $item = $this->replaceToken($item, "/\\[subject\\]/s", $subject);
+                $item = $this->replaceToken($item, "/\\[status\\]/s", $status);
+                $item = $this->replaceToken($item, "/\\[dept\\]/s", $kyTicket->getDepartment()->getTitle());
+                $item = $this->replaceToken($item, "/\\[creation\\]/s", $kyTicket->getCreationTime());
+                $item = $this->replaceToken($item, "/\\[type\\]/s", $kyTicket->getType()->getTitle());
 
-
-                $item = preg_replace("/\\[dept\\]/s", $kyTicket->getDepartment()->getTitle(), $item);
-                $item = preg_replace("/\\[creation\\]/s", $kyTicket->getCreationTime(), $item);
-                $item = preg_replace("/\\[type\\]/s", $kyTicket->getType()->getTitle(), $item);
-
-                $itemlist .= (string) $item;
+                $itemlist .= $item;
 
                 $i++;
             }
         }
         return $itemlist;
+    }
+
+    /**
+     * @param non-empty-string $pattern
+     * @param mixed $replacement
+     */
+    private function replaceToken(string $subject, string $pattern, $replacement): string
+    {
+        if (!is_scalar($replacement)) {
+            $replacement = "";
+        }
+
+        $updated = preg_replace($pattern, (string) $replacement, $subject);
+        if (!is_string($updated)) {
+            return $subject;
+        }
+
+        return $updated;
     }
 }
