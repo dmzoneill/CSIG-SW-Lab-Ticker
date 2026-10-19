@@ -1,0 +1,8 @@
+# Vendored Kayako PHP API client (Copyright 2011 Kayako; ky/LICENSE and ky/README.md) and its generated phpDocumentor output in ky/doc.
+ky/
+
+# Vendored jQuery UI v1.11.0 theme (Copyright 2014 jQuery Foundation, MIT), copied into the basic view.
+views/basic/jquery-ui.css
+
+# Vendored jQuery UI v1.11.0 theme (Copyright 2014 jQuery Foundation, MIT), copied into the old-basic view.
+views/old-basic/jquery-ui.css

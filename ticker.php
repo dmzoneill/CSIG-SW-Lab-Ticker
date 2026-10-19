@@ -1,8 +1,7 @@
 <?php
 
-require_once( "config.php" );
+require_once("config.php");
 
-$ajax = isset( $_GET['ajax'] ) ? 1 : 0;
+$ajax = isset($_GET['ajax']) ? 1 : 0;
 
-new Ticker( $ajax );
-
+new \LabTicker\Ticker($ajax);
