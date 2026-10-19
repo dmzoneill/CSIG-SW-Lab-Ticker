@@ -1,230 +1,219 @@
 <?php
 
+namespace LabTicker;
+
+use kyDepartment;
+use kyTicket;
+use kyTicketStatus;
+use kyTicketType;
+
 class Ticker
 {
-	public function __construct( $ajax )
-	{
-		if( $ajax == 1 )
-		{
-			$view = new View( "indexsimple" );
-		}
-		else
-		{
-			$view = new View( "index" );
-		}
-		
-		$items = array(
-			"callback_ticketlist" => array( "ticketentry" , $this , "callback_ticketlist" ),
-			"title" => "Lab ticker",
-			"refreshTime" => __REFRESH_TIME
-		);
-		
-		$view->process( $items );
-		$view->output();
-	}
+    /**
+     * @param mixed $ajax
+     */
+    public function __construct($ajax)
+    {
+        if ($ajax == 1) {
+            $view = new View("indexsimple");
+        } else {
+            $view = new View("index");
+        }
 
-	private function get_dept_exclusions( )
-	{
-		$depart_excl = array();
+        $items = array(
+            "callback_ticketlist" => array( "ticketentry" , $this , "callbackTicketlist" ),
+            "title" => "Lab ticker",
+            "refreshTime" => configValue('__REFRESH_TIME')
+        );
 
-		if(strpos(__DEPARTMENT_EXCLUSIONS, "|") > 0 )
-		{
-			$depts = explode("|", __DEPARTMENT_EXCLUSIONS);
+        $view->process($items);
+        $view->output();
+    }
 
-			foreach ($depts as $dept) 
-			{
-				array_push($depart_excl, array("!=", $dept));
-			}
-		}
-		else
-		{
-			$depts = __DEPARTMENT_EXCLUSIONS;
-			array_push($depart_excl, array("!=", $depts));
-		}
+    /**
+     * @return list<array{0: string, 1: string}>
+     */
+    private function getDeptExclusions(): array
+    {
+        $depart_excl = array();
+        $exclusions = (string) configValue('__DEPARTMENT_EXCLUSIONS');
 
-		return $depart_excl;
-	}
+        if (strpos($exclusions, "|") > 0) {
+            $depts = explode("|", $exclusions);
 
-	private static function sortBy($a, $b)
-	{
-		$a_status = $a->getStatus()->getTitle();
-	    $b_status = $b->getStatus()->getTitle();
+            foreach ($depts as $dept) {
+                array_push($depart_excl, array("!=", $dept));
+            }
+        } else {
+            array_push($depart_excl, array("!=", $exclusions));
+        }
 
-		if(__SORT_METHOD == "ID")
-	    {
-	    	$one = $a->getId();
-	    	$two = $b->getId();
-	    }
-	    elseif (__SORT_METHOD == "CREATION_DATE") 
-	    {
-	    	$one = $a->getCreationTime();
-	    	$two = $b->getCreationTime();
-	    }
+        return $depart_excl;
+    }
 
-		if ( $one == $two ) 
-		{
-			return 0;
-		}
-		
-		if ( __SORT_DIRECTION == "DESC")
-		{
-			return ($one < $two ) ? 1 : -1;
-		}
+    /**
+     * @param object $a
+     * @param object $b
+     */
+    private static function sortBy($a, $b): int
+    {
+        $one = null;
+        $two = null;
 
-		return ($one < $two ) ? -1 : 1;
-	}
+        $sortMethod = configValue('__SORT_METHOD');
+        if ($sortMethod == "ID") {
+            $one = $a->getId();
+            $two = $b->getId();
+        } elseif ($sortMethod == "CREATION_DATE") {
+            $one = $a->getCreationTime();
+            $two = $b->getCreationTime();
+        }
 
-	private function filter_by_depts( )
-	{
-		$departments = kyDepartment::getAll();
+        if ($one == $two) {
+            return 0;
+        }
 
-		foreach ($this->get_dept_exclusions() as $value) 
-		{
-			$departments = $departments->filterByTitle( $value );
-		}
+        if (configValue('__SORT_DIRECTION') == "DESC") {
+            return ($one < $two ) ? 1 : -1;
+        }
 
-		return $departments;
-	}
+        return ($one < $two ) ? -1 : 1;
+    }
 
-	public function callback_ticketlist( $match )
-	{		
-		$itemlist = "";
-		
-		$tickets = array();
-		$i=1;
+    private function filterByDepts(): \kyResultSet
+    {
+        $departments = kyDepartment::getAll();
 
-		$ticketStatus = (strpos(__TICKET_STATUS, "|") > 0) ? explode("|", __TICKET_STATUS) : __TICKET_STATUS;
-		$ticketType = (strpos(__TICKET_TYPE, "|") > 0) ? explode("|", __TICKET_TYPE) : __TICKET_TYPE;
-				
-		if( is_array( $ticketStatus ) )
-		{
-			$departments = $this->filter_by_depts();
+        foreach ($this->getDeptExclusions() as $value) {
+            $departments = $this->filterResultSet($departments, "filterByTitle", $value);
+        }
 
-			foreach ($ticketStatus as $status) 
-			{
-				if( is_array( $ticketType ) )
-				{
-					foreach ($ticketType as $type) 
-					{
-						$ticketsearch = kyTicket::getAll
-						( 
-							$departments, 
-							kyTicketStatus::getAll()->filterByTitle( $status )
-						)->filterByTypeId( kyTicketType::getAll()->filterByTitle( $type )->first()->getId() );
-					
-						if(count($ticketsearch->getRawArray()) > 0)
-						{
-							$ticketsfound = $ticketsearch->getRawArray();
-							usort($ticketsfound, array("Ticker", "sortBy"));
-							$tickets = array_merge($tickets, $ticketsfound);
-						}
-					}
-				}
-				else
-				{
+        return $departments;
+    }
 
-					$ticketsearch = kyTicket::getAll
-					( 
-						$departments, 
-						kyTicketStatus::getAll()->filterByTitle( $status )
-					)->filterByTypeId( kyTicketType::getAll()->filterByTitle( $ticketType )->first()->getId() );
+    /**
+     * Kayako result sets expose filterBy* through __call. Call that method
+     * directly so the return type stays a result set.
+     *
+     * @param mixed $argument
+     */
+    private function filterResultSet(\kyResultSet $set, string $method, $argument): \kyResultSet
+    {
+        return $set->__call($method, array($argument));
+    }
 
-					if(count($ticketsearch->getRawArray()) > 0)
-					{
-						$ticketsfound = $ticketsearch->getRawArray();
-						usort($ticketsfound, array("Ticker", "sortBy"));
-						$tickets = array_merge($tickets, $ticketsfound);
-					}
-				}
-			}
-		}
-		else
-		{
-			$departments = $this->filter_by_depts();
+    /**
+     * @param array<int, object> $tickets
+     * @param mixed $departments
+     * @param mixed $status
+     * @param mixed $type
+     */
+    private function appendMatchingTickets(array &$tickets, $departments, $status, $type): void
+    {
+        $filteredStatus = $this->filterResultSet(kyTicketStatus::getAll(), "filterByTitle", $status);
+        $filteredType = $this->filterResultSet(kyTicketType::getAll(), "filterByTitle", $type);
+        $ticketsearch = kyTicket::getAll($departments, $filteredStatus);
+        $ticketsearch = $this->filterResultSet(
+            $ticketsearch,
+            "filterByTypeId",
+            $filteredType->first()->getId()
+        );
 
-			if( is_array( $ticketType ) )
-			{
-				foreach ($ticketType as $type) 
-				{
-					$ticketsearch = kyTicket::getAll
-					( 
-						$departments,  
-						kyTicketStatus::getAll()->filterByTitle( $ticketStatus )
-					)->filterByTypeId( kyTicketType::getAll()->filterByTitle( $type )->first()->getId() );
+        if (count($ticketsearch->getRawArray()) > 0) {
+            $ticketsfound = $ticketsearch->getRawArray();
+            usort($ticketsfound, function ($a, $b) {
+                return self::sortBy($a, $b);
+            });
+            $tickets = array_merge($tickets, $ticketsfound);
+        }
+    }
 
-					if(count($ticketsearch->getRawArray()) > 0)
-					{
-						$ticketsfound = $ticketsearch->getRawArray();
-						usort($ticketsfound, array("Ticker", "sortBy"));
-						$tickets = array_merge($tickets, $ticketsfound);
-					}
-				}
-			}
-			else
-			{
-				$ticketsearch = kyTicket::getAll
-				( 
-					$departments,  
-					kyTicketStatus::getAll()->filterByTitle( $ticketStatus )
-				)->filterByTypeId( kyTicketType::getAll()->filterByTitle( $ticketType )->first()->getId() );
+    /**
+     * @param mixed $value
+     * @return list<string>
+     */
+    private function listFilterValues($value): array
+    {
+        $value = (string) $value;
+        if (strpos($value, "|") > 0) {
+            return explode("|", $value);
+        }
 
-				if(count($ticketsearch->getRawArray()) > 0)
-				{
-					$ticketsfound = $ticketsearch->getRawArray();
-					usort($ticketsfound, array("Ticker", "sortBy"));
-					$tickets = array_merge($tickets, $ticketsfound);
-				}
-			}
-		}
+        return array( $value );
+    }
 
-		foreach ($tickets as $kyTicket)
-		{
+    public function callbackTicketlist(string $match): string
+    {
+        $itemlist = "";
 
-			if( ( $i <= __MAX_TICKETS ) || __MAX_TICKETS == -1 )
-			{			
-				$item = $match;
+        $tickets = array();
+        $i = 1;
 
-				$subject = $kyTicket->getSubject();
-				if( strlen($subject) >= 59 )
-				{
-					$subject = substr($subject, 0, 56);
-					$subject .= "...";
-				}
+        $ticketStatus = $this->listFilterValues(configValue('__TICKET_STATUS'));
+        $ticketType = $this->listFilterValues(configValue('__TICKET_TYPE'));
+        $departments = $this->filterByDepts();
 
-				$status = $kyTicket->getStatus()->getTitle();
-				if($status == "Open")
-				{
-					$class = "open";
-				}
-				elseif ($status == "In Progress") 
-				{
-					$class = "inProgress";
-				}
-				elseif ($status == "Closed") 
-				{
-					$class = "closed";
-				}
-				elseif ($status == "On Hold") 
-				{
-					$class = "onHold";
-				}
+        foreach ($ticketStatus as $status) {
+            foreach ($ticketType as $type) {
+                $this->appendMatchingTickets($tickets, $departments, $status, $type);
+            }
+        }
 
-				$item = preg_replace( "/\\[class\\]/s" , $class , $item );
-				$item = preg_replace( "/\\[ticketid\\]/s" , $kyTicket->getId() , $item );
-				$item = preg_replace( "/\\[user\\]/s" , $kyTicket->getFullName() , $item );
-				$item = preg_replace( "/\\[subject\\]/s" , $subject , $item );
-				$item = preg_replace( "/\\[status\\]/s" , $status , $item );
-				
-				
-				$item = preg_replace( "/\\[dept\\]/s" , $kyTicket->getDepartment()->getTitle() , $item );
-				$item = preg_replace( "/\\[creation\\]/s" , $kyTicket->getCreationTime() , $item );
-				$item = preg_replace( "/\\[type\\]/s" , $kyTicket->getType()->getTitle() , $item );
-				
-				$itemlist .= $item;
+        foreach ($tickets as $kyTicket) {
+            $maxTickets = configValue('__MAX_TICKETS');
+            if (( $i <= $maxTickets ) || $maxTickets == -1) {
+                $item = $match;
 
-				$i++;
-			}
-		}
-		return $itemlist;
-	}
+                $subject = $kyTicket->getSubject();
+                if (strlen($subject) >= 59) {
+                    $subject = substr($subject, 0, 56);
+                    $subject .= "...";
+                }
+
+                $status = $kyTicket->getStatus()->getTitle();
+                $class = "";
+                if ($status == "Open") {
+                    $class = "open";
+                } elseif ($status == "In Progress") {
+                    $class = "inProgress";
+                } elseif ($status == "Closed") {
+                    $class = "closed";
+                } elseif ($status == "On Hold") {
+                    $class = "onHold";
+                }
+
+                $item = $this->replaceToken($item, "/\\[class\\]/s", $class);
+                $item = $this->replaceToken($item, "/\\[ticketid\\]/s", $kyTicket->getId());
+                $item = $this->replaceToken($item, "/\\[user\\]/s", $kyTicket->getFullName());
+                $item = $this->replaceToken($item, "/\\[subject\\]/s", $subject);
+                $item = $this->replaceToken($item, "/\\[status\\]/s", $status);
+                $item = $this->replaceToken($item, "/\\[dept\\]/s", $kyTicket->getDepartment()->getTitle());
+                $item = $this->replaceToken($item, "/\\[creation\\]/s", $kyTicket->getCreationTime());
+                $item = $this->replaceToken($item, "/\\[type\\]/s", $kyTicket->getType()->getTitle());
+
+                $itemlist .= $item;
+
+                $i++;
+            }
+        }
+        return $itemlist;
+    }
+
+    /**
+     * @param non-empty-string $pattern
+     * @param mixed $replacement
+     */
+    private function replaceToken(string $subject, string $pattern, $replacement): string
+    {
+        if (!is_scalar($replacement)) {
+            $replacement = "";
+        }
+
+        $updated = preg_replace($pattern, (string) $replacement, $subject);
+        if (!is_string($updated)) {
+            return $subject;
+        }
+
+        return $updated;
+    }
 }

@@ -1,0 +1,189 @@
+var timer = 0;
+
+var tickerHooks = {
+	addFields: function() {},
+	updateExisting: function() {}
+};
+
+function updateTable( data )
+{
+	//alert("Updating Table");
+	if(data.indexOf("*eol*") < 0 ) {
+		return;
+	}
+
+	var lines = data.split( "*eol*" );
+
+	for( var i = 0; i < lines.length; i++ )
+	{
+		if(lines[i].indexOf("*sp*") < 0 ) 
+		{
+			continue;
+		}
+
+		var fields = lines[i].split( "*sp*" );
+
+		if (rowExists(fields[0]))
+		{
+			continue;
+		}
+		else
+		{
+			tickerHooks.addFields( fields );
+		}
+	}
+
+	$( ".row" ).each(function( index )
+	{
+		var rowID = $(this).attr( "id" );
+
+		var that = this;
+		var found = false;
+
+		for( var i = 0; i < lines.length; i++ )
+		{
+			var ticketid = lines[i].split( "*sp*" )[0];
+			var status = lines[i].split( "*sp*" )[3];
+			
+			if(ticketid == rowID)
+			{
+				found = true;
+				tickerHooks.updateExisting( status , that, rowID );
+				break;
+			}
+		}
+
+		if (found != true)
+		{
+			removeRow(rowID);
+		}
+
+	});
+}
+
+function refresh()
+{
+	updateBar();
+
+	if (timer == {refreshTime})
+	{
+		$.ajax(
+		{
+			type: "GET",
+			url: "ticker.php?ajax=true",
+			dataType: "html"
+		}).success(function( data )
+		{ 
+			updateTable( data );
+			timer = 0;
+			updateBar(); 
+		});
+	}
+	
+	timer++;
+}
+
+
+function updateBar() 
+{
+	var percent = ( timer / {refreshTime} ) * 100;
+
+	percent += "%";
+	$( ".ui-progressbar-value" ).animate({'width': percent}, 999, "linear" );
+}
+
+function rowExists( id )
+{
+	if ( $( '#' + id ).length > 0)
+	{
+   		return 1;
+	}
+	return 0;
+}
+
+function removeRow( id )
+{
+	$("#"+id).animate({ opacity: 0 },600).slideUp(600, function()
+	{
+		$( "#" + id ).remove();
+	});
+}
+
+function paintOpenOrProgress( that , status )
+{
+	if ( status == "In Progress") 
+	{
+		$(that).attr( "class", "row inProgress" );
+		$('.status span', that).text('In Progress');
+	}
+	else if ( status == "Open" ) 
+	{
+		$(that).attr( "class", "row open" );
+		$('.status span', that).text('Open');
+	}
+}
+
+function rowClassForStatus( status , includeHoldAndClosed )
+{
+	if(status == "Open")
+	{
+		return "open";
+	}
+	else if (status == "In Progress") 
+	{
+		return "inProgress";
+	}
+	else if (includeHoldAndClosed && status == "On Hold") 
+	{
+		return "onHold";
+	}
+	else if (includeHoldAndClosed && status == "Closed") 
+	{
+		return "closed";
+	}
+}
+
+function placeRow( rowNode , rowId , status , stopOnInsert )
+{
+	var rowInserted = false;
+	$(".row").each(function( index )
+	{		
+		var divID = $(this).attr("id");
+
+		var divStatus = $('.status span', this).text();
+
+		if( status ==  divStatus )
+		{
+			if(divID > rowId)
+			{
+				$( this ).before( rowNode );
+				rowInserted = true;
+				if( stopOnInsert )
+				{
+					return false;
+				}
+				return;
+			}
+		}
+		else if (status == "In Progress" && divStatus == "Open") 
+		{
+			$( this ).before( rowNode );
+			rowInserted = true;
+			if( stopOnInsert )
+			{
+				return false;
+			}
+			return;
+		};	
+	});
+
+	if(!rowInserted)
+	{
+		$(".container").append(rowNode);
+	}
+}
+
+function revealRow( id )
+{
+	$("#"+id).css('opacity', 0).slideDown(1200).animate({ opacity: 1 },{ queue: false, duration: 4000 });
+}
