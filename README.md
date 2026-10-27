@@ -1,14 +1,14 @@
+# CSIG-SW-Lab-Ticker
+
 <p align="center">
   <img src=".github/logo.png" alt="CSIG-SW-Lab-Ticker logo" width="128" />
 </p>
-
-# CSIG-SW-Lab-Ticker
 
 ===================
 
 -[Configuring the system using the provided config.php file](#config-options)
 
--[Changing the display interface and including other datafields](#managing-the-display-format)
+- Changing the display interface and including other datafields
 
 This project is based around the [ticker.php](ticker.php) web page. This page provides a display for the work done by the php files.
 
