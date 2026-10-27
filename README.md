@@ -3,6 +3,7 @@
 </p>
 
 # CSIG-SW-Lab-Ticker
+
 ===================
 
 -[Configuring the system using the provided config.php file](#config-options)
@@ -274,7 +275,7 @@ The placeholders included by default are:
  <li>[subject]</li>
  <li>[status]</li>
  <li>[dept]</li>
- <li>[creation]</li>    
+ <li>[creation]</li>
  <li>[type]</li>
 </ul>
 There is also one idenfier that is created based on status and is used to place tickets into different CSS classes for colour-coding. It is:
@@ -305,7 +306,7 @@ These attributes are seperated in the javascript and passed to the addRow() func
 <p>
 The Kayako API offers access to many fields of a ticket query. For this reason, not all fields are included by default. To include additional fields, changes must be in many parts of the program.
 <ul style="list-style-type: none;">
-<li><a href="#indextxt-1">index.txt</a></li>    
+<li><a href="#indextxt-1">index.txt</a></li>
 <li><a href="#indexsimpletxt-1">indexsimple.txt</a></li>
 
 <li><a href="#tickerclassphp">ticker.class.php</a></li>
@@ -342,7 +343,7 @@ The <code>callback_ticketlist()</code> of this class must be changed so that the
 The javascript must be edited to take extra datafields during the string split operations on indexsimple in <code>updateTable()</code>. <br>
 The <code>addRow()</code> function must also be adapted to match the new HTML/CSS of index.txt and also to include the extra parameters now being passed to it from the additional <code>updateTable()</code> splits.
 </p>
-</div>    
+</div>
 </div>
 </div>
 
