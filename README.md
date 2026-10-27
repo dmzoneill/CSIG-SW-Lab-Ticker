@@ -33,7 +33,7 @@ The config.php file allows various settings within the program to be changed.
 <div id="ticket-status">
 <h3>Ticket Status</h3>
 <div class="container">
-<p>Ticket status to be included are provided as a pipe seperated string of values. The order in which they are listed controls the order in which they are displayed on-screen.<br>The available options to include are:
+<p>Ticket status to be included are provided as a pipe separated string of values. The order in which they are listed controls the order in which they are displayed on-screen.<br>The available options to include are:
 <ul>
  <li>Open</li>
  <li>In Progress</li>
@@ -59,7 +59,7 @@ The config.php file allows various settings within the program to be changed.
 <h3>Ticket Types</h3>
 
 <div class="container">
-<p>Ticket types to be included are provided as a pipe seperated string of values.<br>The available options to include are:
+<p>Ticket types to be included are provided as a pipe separated string of values.<br>The available options to include are:
 <ul>
  <li>Issue</li>
  <li>Task</li>
@@ -174,7 +174,7 @@ The available options are:
 <div id="department-exclusions">
 <h3>Department Exclusions</h3>
 <div class="container">
-<p>This controls which departments to exclude tickets from and is provided as pipe seperated string. <br>There are 22 departments that tickets are pulled from and each may be excluded by providing the department name in this string.
+<p>This controls which departments to exclude tickets from and is provided as pipe separated string. <br>There are 22 departments that tickets are pulled from and each may be excluded by providing the department name in this string.
 <ul style="list-style-type:decimal">
  <li>Other</li>
  <li>Hardware</li>
@@ -278,7 +278,7 @@ The placeholders included by default are:
  <li>[creation]</li>
  <li>[type]</li>
 </ul>
-There is also one idenfier that is created based on status and is used to place tickets into different CSS classes for colour-coding. It is:
+There is also one identifier that is created based on status and is used to place tickets into different CSS classes for colour-coding. It is:
 <ul style="list-style-type:none">
  <li>[class]</li>
 </ul>
@@ -291,8 +291,8 @@ If further datafields are required, they can be added as explained <a href="#inc
 <h4>Indexsimple.txt</h4>
 <p>
 The purpose of this file is to return all the updated values of the tickets to the page so changes can be propagated to the viewer.<br>
-For that reason, it just consists of all the attributes of each ticket in a string that is seperated by a specific mark-up. <br>
-These attributes are seperated in the javascript and passed to the addRow() function or used in the updateRow() function.
+For that reason, it just consists of all the attributes of each ticket in a string that is separated by a specific mark-up. <br>
+These attributes are separated in the javascript and passed to the addRow() function or used in the updateRow() function.
 
 <br>Click <a href="views/basic/indexsimple.txt">here</a> to see an example indexsimple.txt file used in the basic display view.
 </p>
